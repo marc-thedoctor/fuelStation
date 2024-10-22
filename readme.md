@@ -1,6 +1,8 @@
 # criar package
-npm init
+npm init -y
 
 # Gerenciar requisições
-npm intall express
+npm install express
 
+# Instalar dependencias
+npm install express mongoose nodemailer body-parser
