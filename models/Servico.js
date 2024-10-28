@@ -6,23 +6,23 @@ const servicoSchema = new mongoose.Schema({
     nome: String,
     celular: String,
     email: String,
+    createdAt: {
+      type: Date,
+      default: Date.now, // Define a data de criação automaticamente
+    }
   },
   veiculo: {
     marca: String,
     modelo: String,
-    placa: String,
+    placa: String
   },
   servico: {
     tipo: String,
-    status: {
-      type: String,
-      default: 'Em andamento', // Status inicial do serviço
-    },
-    observacao: String,
+    observacao: String
   },
-  dataCriacao: {
-    type: Date,
-    default: Date.now,
+  status: {
+    type: String,
+    default: 'Registrado' // Status inicial do serviço
   }
 });
 

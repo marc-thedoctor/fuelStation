@@ -1,9 +1,9 @@
-// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const Servico = require('./models/Servico');
+const twilio = require('twilio'); // Importando o Twilio
 
 const app = express();
 app.use(bodyParser.json());
@@ -14,6 +14,11 @@ mongoose.connect('mongodb://localhost:27017/fuel', {
   useUnifiedTopology: true,
 }).then(() => console.log('Conectado ao MongoDB'))
   .catch(err => console.error('Erro ao conectar MongoDB', err));
+
+// Configuração do Twilio
+const accountSid = 'ID Twilio';
+const authToken = 'token Twilio';
+const client = twilio(accountSid, authToken);
 
 // Transporter do Nodemailer para envio de e-mails
 const transporter = nodemailer.createTransport({
@@ -29,7 +34,6 @@ app.post('/servico', async (req, res) => {
   try {
     const { cliente, veiculo, servico } = req.body;
 
-    // Criar novo registro de serviço
     const novoServico = new Servico({
       cliente,
       veiculo,
@@ -38,21 +42,15 @@ app.post('/servico', async (req, res) => {
 
     await novoServico.save();
 
-    // Enviar e-mail para o cliente sobre o início do serviço
-    const mailOptions = {
-      from: 'seu_email@gmail.com',
-      to: cliente.email,
-      subject: 'Serviço registrado com sucesso!',
-      text: `Olá ${cliente.nome}, seu serviço de ${servico.tipo} foi registrado e está em andamento.`
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log('Erro ao enviar email:', error);
-      } else {
-        console.log('Email enviado:', info.response);
-      }
-    });
+    // Enviar SMS inicial
+    client.messages
+      .create({
+        from: '+SEU_NUMERO_TWILIO',
+        to: cliente.celular,
+        body: `Olá ${cliente.nome}, seu serviço de ${servico.tipo} foi registrado e está em andamento.`,
+      })
+      .then(message => console.log('SMS enviado:', message.sid))
+      .catch(error => console.error('Erro ao enviar SMS:', error));
 
     res.status(201).json({ message: 'Serviço registrado com sucesso!' });
   } catch (error) {
@@ -61,32 +59,28 @@ app.post('/servico', async (req, res) => {
 });
 
 // Rota para atualizar o status do serviço
-app.patch('/servico/:id', async (req, res) => {
+app.put('/servico/:id/status', async (req, res) => {
   try {
+    const { id } = req.params;
     const { status } = req.body;
-    const servico = await Servico.findByIdAndUpdate(req.params.id, { 'servico.status': status }, { new: true });
 
+    // Atualizar o status do serviço no banco de dados
+    const servico = await Servico.findByIdAndUpdate(id, { status }, { new: true });
     if (!servico) {
-      return res.status(404).json({ message: 'Serviço não encontrado' });
+      return res.status(404).json({ error: 'Serviço não encontrado' });
     }
 
-    // Enviar mensagem ao cliente sobre a atualização do status
-    const mailOptions = {
-      from: 'seu_email@gmail.com',
-      to: servico.cliente.email,
-      subject: `Atualização do serviço: ${servico.servico.tipo}`,
-      text: `Olá ${servico.cliente.nome}, o status do seu serviço foi atualizado para: ${status}.`
-    };
+    // Enviar SMS ao cliente sobre o novo status
+    client.messages
+      .create({
+        from: '+SEU_NUMERO_TWILIO',
+        to: servico.cliente.celular,
+        body: `Olá ${servico.cliente.nome}, o status do seu serviço de ${servico.servico.tipo} foi atualizado para: ${status}.`,
+      })
+      .then(message => console.log('SMS de atualização enviado:', message.sid))
+      .catch(error => console.error('Erro ao enviar SMS de atualização:', error));
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log('Erro ao enviar email:', error);
-      } else {
-        console.log('Email enviado:', info.response);
-      }
-    });
-
-    res.json(servico);
+    res.json({ message: 'Status atualizado e SMS enviado!', servico });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar status do serviço' });
   }
@@ -103,4 +97,4 @@ app.get('/servicos', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT} http://localhost:3000/`));
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
