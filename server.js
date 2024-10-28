@@ -4,9 +4,11 @@ const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const Servico = require('./models/Servico');
 const twilio = require('twilio'); // Importando o Twilio
+const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Conexão com MongoDB
 mongoose.connect('mongodb://localhost:27017/fuel', {
