@@ -2,13 +2,18 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
+const twilio = require('twilio');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const User = require('./models/User'); // Modelo de Usuário
 const Servico = require('./models/Servico');
-const twilio = require('twilio'); // Importando o Twilio
 const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+const jwtSecret = 'seu_segredo_jwt_aqui'; // Mantenha-o seguro!
 
 // Conexão com MongoDB
 mongoose.connect('mongodb://localhost:27017/fuel', {
@@ -17,86 +22,58 @@ mongoose.connect('mongodb://localhost:27017/fuel', {
 }).then(() => console.log('Conectado ao MongoDB'))
   .catch(err => console.error('Erro ao conectar MongoDB', err));
 
-// Configuração do Twilio
-const accountSid = 'ID Twilio';
-const authToken = 'token Twilio';
-const client = twilio(accountSid, authToken);
+// Middleware para verificar o JWT
+function authMiddleware(req, res, next) {
+  const token = req.headers['authorization'];
+  if (!token) return res.status(401).json({ error: 'Acesso negado' });
 
-// Transporter do Nodemailer para envio de e-mails
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'seu_email@gmail.com', // Substitua pelo seu email
-    pass: 'sua_senha', // Substitua pela sua senha de email
-  },
-});
+  jwt.verify(token, jwtSecret, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Token inválido' });
+    req.user = user;
+    next();
+  });
+}
 
-// Rota para registrar o serviço
-app.post('/servico', async (req, res) => {
+// Rota de cadastro de usuário
+app.post('/register', async (req, res) => {
   try {
-    const { cliente, veiculo, servico } = req.body;
+    const { username, email, password } = req.body;
 
-    const novoServico = new Servico({
-      cliente,
-      veiculo,
-      servico
-    });
+    const newUser = new User({ username, email, password });
+    await newUser.save();
 
-    await novoServico.save();
-
-    // Enviar SMS inicial
-    client.messages
-      .create({
-        from: '+SEU_NUMERO_TWILIO',
-        to: cliente.celular,
-        body: `Olá ${cliente.nome}, seu serviço de ${servico.tipo} foi registrado e está em andamento.`,
-      })
-      .then(message => console.log('SMS enviado:', message.sid))
-      .catch(error => console.error('Erro ao enviar SMS:', error));
-
-    res.status(201).json({ message: 'Serviço registrado com sucesso!' });
+    res.status(201).json({ message: 'Usuário cadastrado com sucesso' });
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao registrar serviço' });
+    res.status(500).json({ error: 'Erro ao cadastrar usuário' });
   }
 });
 
-// Rota para atualizar o status do serviço
-app.put('/servico/:id/status', async (req, res) => {
+// Rota de login de usuário
+app.post('/login', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
+    const { email, password } = req.body;
 
-    // Atualizar o status do serviço no banco de dados
-    const servico = await Servico.findByIdAndUpdate(id, { status }, { new: true });
-    if (!servico) {
-      return res.status(404).json({ error: 'Serviço não encontrado' });
+    const user = await User.findOne({ email });
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
-    // Enviar SMS ao cliente sobre o novo status
-    client.messages
-      .create({
-        from: '+SEU_NUMERO_TWILIO',
-        to: servico.cliente.celular,
-        body: `Olá ${servico.cliente.nome}, o status do seu serviço de ${servico.servico.tipo} foi atualizado para: ${status}.`,
-      })
-      .then(message => console.log('SMS de atualização enviado:', message.sid))
-      .catch(error => console.error('Erro ao enviar SMS de atualização:', error));
+    const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, {
+      expiresIn: '1h',
+    });
 
-    res.json({ message: 'Status atualizado e SMS enviado!', servico });
+    res.json({ message: 'Login bem-sucedido', token });
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao atualizar status do serviço' });
+    res.status(500).json({ error: 'Erro ao fazer login' });
   }
 });
 
-// Rota para listar todos os serviços
-app.get('/servicos', async (req, res) => {
-  try {
-    const servicos = await Servico.find();
-    res.json(servicos);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar serviços' });
-  }
+// Rota protegida de exemplo (para testar a autenticação)
+app.get('/perfil', authMiddleware, (req, res) => {
+  res.json({ message: 'Você acessou uma rota protegida!', user: req.user });
 });
+
+// Outras rotas (serviço) devem ser protegidas pelo middleware 'authMiddleware' também
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));

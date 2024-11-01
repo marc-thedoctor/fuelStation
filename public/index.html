@@ -1,38 +1,95 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FUELSTATION - Cadastro de Clientes</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Serviço</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    form { max-width: 400px; margin: auto; }
+    label { display: block; margin-top: 10px; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+    button { margin-top: 15px; padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #218838; }
+  </style>
 </head>
 <body>
-    <h1>Cadastro de Clientes</h1>
-    
-    <form id="clienteForm">
-        <label for="nome">Nome:</label>
-        <input type="text" id="nome" required>
-        
-        <label for="telefone">Telefone:</label>
-        <input type="text" id="telefone" required>
-        
-        <label for="placa">Placa do Veículo:</label>
-        <input type="text" id="placa" required>
-        
-        <label for="modelo">Modelo do Veículo:</label>
-        <input type="text" id="modelo" required>
-        
-        <label for="observacoes">Observações:</label>
-        <textarea id="observacoes"></textarea>
-        
-        <button type="submit">Cadastrar Cliente</button>
-    </form>
-    
-    <div id="clientes">
-        <h2>Clientes Cadastrados</h2>
-        <ul id="listaClientes"></ul>
-    </div>
+  <div class="text-center mb-3" align="center">
+    <img src="images/logo.png" alt="Logo FuelStation" style="width: 150px;">
+  </div>
+  <h2 style="text-align: center;">Cadastro de Serviço</h2>
+  <form id="cadastroForm">
+    <h3>Informações do Cliente</h3>
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" name="nome" required>
 
-    <script src="script.js"></script>
+    <label for="celular">Celular:</label>
+    <input type="text" id="celular" name="celular" placeholder="+5511999999999" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+
+    <h3>Informações do Veículo</h3>
+    <label for="marca">Marca:</label>
+    <input type="text" id="marca" name="marca" required>
+
+    <label for="modelo">Modelo:</label>
+    <input type="text" id="modelo" name="modelo" required>
+
+    <label for="placa">Placa:</label>
+    <input type="text" id="placa" name="placa" required>
+
+    <h3>Informações do Serviço</h3>
+    <label for="tipo">Tipo de Serviço:</label>
+    <input type="text" id="tipo" name="tipo" required>
+
+    <label for="observacao">Observação:</label>
+    <textarea id="observacao" name="observacao"></textarea>
+
+    <button type="button" onclick="enviarCadastro()">Cadastrar Serviço</button>
+  </form>
+
+  <script>
+    async function enviarCadastro() {
+      const dados = {
+        cliente: {
+          nome: document.getElementById('nome').value,
+          celular: document.getElementById('celular').value,
+          email: document.getElementById('email').value
+        },
+        veiculo: {
+          marca: document.getElementById('marca').value,
+          modelo: document.getElementById('modelo').value,
+          placa: document.getElementById('placa').value
+        },
+        servico: {
+          tipo: document.getElementById('tipo').value,
+          observacao: document.getElementById('observacao').value
+        }
+      };
+
+      try {
+        const response = await fetch('http://localhost:3000/servico', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(dados)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert('Serviço cadastrado com sucesso!');
+          document.getElementById('cadastroForm').reset(); // Limpa o formulário
+        } else {
+          alert('Erro ao cadastrar serviço: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao conectar com o servidor');
+      }
+    }
+  </script>
 </body>
 </html>

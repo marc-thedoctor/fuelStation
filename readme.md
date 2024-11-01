@@ -9,3 +9,6 @@ npm install express mongoose nodemailer body-parser
 
 # Instalar twilio
 npm install twilio
+
+# Instalar autenticação de login json
+npm install bcrypt jsonwebtoken
