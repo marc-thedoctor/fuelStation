@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listar Serviços</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Serviços Cadastrados</h1>
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Veículo</th>
+                    <th>Placa</th>
+                    <th>Data do Serviço</th>
+                    <th>Serviço</th>
+                    <th>Andamento</th>
+                    <th>Observação</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="servicosTableBody">
+                <!-- Linhas de serviços serão adicionadas aqui via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const response = await fetch('/cliente', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            });
+
+            if (response.ok) {
+                const servicos = await response.json();
+                const tbody = document.getElementById('servicosTableBody');
+
+                servicos.forEach(servico => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${servico.nome}</td>
+                        <td>${servico.email}</td>
+                        <td>${servico.veiculo}</td>
+                        <td>${servico.placa}</td>
+                        <td>${new Date(servico.dataServico).toLocaleDateString()}</td>
+                        <td>${servico.servico}</td>
+                        <td>
+                            <select class="form-control" onchange="atualizarAndamento('${servico._id}', this.value)">
+                                <option value="Iniciado" ${servico.andamento === 'Iniciado' ? 'selected' : ''}>Iniciado</option>
+                                <option value="Em andamento" ${servico.andamento === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+                                <option value="Finalizado" ${servico.andamento === 'Finalizado' ? 'selected' : ''}>Finalizado</option>
+                            </select>
+                        </td>
+                        <td>${servico.observacao}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="editarServico('${servico._id}')">Editar</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                alert('Falha ao carregar os serviços.');
+            }
+        });
+
+        async function atualizarAndamento(id, andamento) {
+            const response = await fetch(`/cliente/atualizar/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                },
+                body: JSON.stringify({ andamento })
+            });
+
+            if (!response.ok) {
+                alert('Falha ao atualizar o andamento.');
+            }
+        }
+
+        function editarServico(id) {
+            window.location.href = `editar.html?id=${id}`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Clientes</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Cadastro de Clientes</h1>
+        <form id="clienteForm" class="mt-4">
+            <div class="form-group">
+                <label for="nome">Nome:</label>
+                <input type="text" class="form-control" id="nome" name="nome" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="veiculo">Veículo:</label>
+                <input type="text" class="form-control" id="veiculo" name="veiculo" required>
+            </div>
+            <div class="form-group">
+                <label for="placa">Placa:</label>
+                <input type="text" class="form-control" id="placa" name="placa" required>
+            </div>
+            <div class="form-group">
+                <label for="dataServico">Data do Serviço:</label>
+                <input type="date" class="form-control" id="dataServico" name="dataServico" required>
+            </div>
+            <div class="form-group">
+                <label for="servico">Serviço:</label>
+                <input type="text" class="form-control" id="servico" name="servico" required>
+            </div>
+            <div class="form-group">
+                <label for="andamento">Andamento:</label>
+                <select class="form-control" id="andamento" name="andamento" required>
+                    <option value="Iniciado">Iniciado</option>
+                    <option value="Em andamento">Em andamento</option>
+                    <option value="Finalizado">Finalizado</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="observacao">Observação:</label>
+                <textarea class="form-control" id="observacao" name="observacao" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Cadastrar</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('clienteForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            const response = await fetch('/cliente/cadastro', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert('Cliente cadastrado com sucesso!');
+                event.target.reset();
+            } else {
+                alert('Falha ao cadastrar cliente.');
+            }
+        });
+    </script>
+</body>
+</html>
