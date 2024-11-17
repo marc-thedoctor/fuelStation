@@ -8,6 +8,34 @@
 </head>
 <body>
     <div class="container">
+        <header class="d-flex justify-content-between align-items-center p-3 mb-4 border-bottom">
+            <div class="d-flex align-items-center">
+                <img src="logo.png" alt="Logo" style="height: 50px;">
+                <span class="ml-3 h4 mb-0"><b>FuelStation</b></span>
+            </div>
+            <div class="d-flex align-items-center">
+                <span id="usuarioLogado" class="mr-3"></span>
+                <a href="#" onclick="window.history.back();" class="btn btn-outline-secondary mr-3">Voltar</a>
+                <button class="btn btn-outline-danger" onclick="logout()">Logout</button>
+            </div>
+        </header>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const usuario = localStorage.getItem('username');
+                if (usuario) {
+                    document.getElementById('usuarioLogado').innerText = `Olá, ${usuario}`;
+                }
+            });
+        
+            function logout() {
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                window.location.href = 'index.html';
+            }
+        </script>
+        
+        
         <h1 class="mt-5">Serviços Cadastrados</h1>
         <table class="table mt-4">
             <thead>
