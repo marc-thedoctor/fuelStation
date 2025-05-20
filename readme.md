@@ -6,3 +6,6 @@ npm install resend
 
 # instalação biblioteca mailgun
 npm install mailgun.js form-data dotenv
+
+# instalação biblioteca twilio
+npm install twilio
